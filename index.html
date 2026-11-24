@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#C85A32" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tour Gastro" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <title>Tour Gastronómico · Último Año</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Header compacto tipo app móvil -->
+    <header class="top-bar">
+      <div class="top-bar-content">
+        <div>
+          <span class="eyebrow">Generación Graduación</span>
+          <h1>Tour Gastronómico</h1>
+        </div>
+        <button id="btnShareWa" class="icon-btn-header" title="Compartir por WhatsApp" aria-label="Compartir por WhatsApp">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Tarjeta de progreso -->
+      <div class="progress-card">
+        <div class="progress-stats">
+          <div>
+            <span class="stat-num" id="statVisited">0</span>
+            <span class="stat-label">visitados de <strong id="statTotal">0</strong></span>
+          </div>
+          <span class="stat-pct" id="statPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <!-- Banner nativo de instalación si el navegador lo soporta -->
+      <div id="installBanner" class="install-banner" style="display: none;">
+        <span>📲 Instala la app en tu pantalla de inicio</span>
+        <button id="btnTriggerInstall" class="btn-install-now">Instalar</button>
+      </div>
+    </header>
+
+    <!-- Barra de filtros táctil -->
+    <nav class="filter-tabs" role="tablist">
+      <button class="tab-btn active" data-filter="all">Todos</button>
+      <button class="tab-btn" data-filter="pending">Pendientes</button>
+      <button class="tab-btn" data-filter="visited">Visitados</button>
+    </nav>
+
+    <!-- Lista principal de lugares -->
+    <main class="feed-container" id="placesList"></main>
+
+    <!-- Botón flotante (FAB) para agregar lugar -->
+    <button class="fab-add" id="btnOpenModal" aria-label="Agregar restaurante">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
+
+    <!-- Barra inferior de navegación / utilidades -->
+    <footer class="bottom-nav">
+      <button class="nav-action" id="btnExportBackup">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Respaldar</span>
+      </button>
+      <label class="nav-action" for="importFile">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span>Importar</span>
+        <input type="file" id="importFile" accept=".json" hidden />
+      </label>
+      <button class="nav-action" id="btnInstallHelp">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        <span>Instalar App</span>
+      </button>
+    </footer>
+  </div>
+
+  <!-- Bottom Sheet Modal: Agregar / Editar Lugar -->
+  <div class="modal-backdrop" id="formModal" aria-hidden="true">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h2 id="modalTitle">Nuevo Lugar</h2>
+        <button type="button" class="close-btn" id="btnCloseModal">&times;</button>
+      </div>
+      <form id="placeForm" class="sheet-form">
+        <input type="hidden" id="placeId" />
+
+        <div class="form-group">
+          <label for="placeName">Restaurante o Cafetería *</label>
+          <input type="text" id="placeName" placeholder="Ej. Casa Oaxaca, Boulenc..." required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="placeDate">Fecha *</label>
+            <input type="date" id="placeDate" required />
+          </div>
+          <div class="form-group">
+            <label for="placeTime">Hora *</label>
+            <input type="time" id="placeTime" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="placeCategory">Categoría</label>
+            <select id="placeCategory">
+              <option value="Restaurante">🍽️ Restaurante</option>
+              <option value="Cafetería">☕ Cafetería / Brunch</option>
+              <option value="Tacos / Street">🌮 Tacos / Antojitos</option>
+              <option value="Postres">🍰 Postres / Helados</option>
+              <option value="Bar / Terraza">🍹 Bar / Terraza</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="placeBudget">Presupuesto est.</label>
+            <select id="placeBudget">
+              <option value="$">$ Económico</option>
+              <option value="$$" selected>$$ Moderado</option>
+              <option value="$$$">$$$ Especial</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="placeLocation">Zona / Dirección o Link de Maps</label>
+          <input type="text" id="placeLocation" placeholder="Ej. Centro Histórico o enlace de Google Maps" />
+        </div>
+
+        <div class="form-group">
+          <label for="placeNotes">Platillo imperdible / Notas</label>
+          <textarea id="placeNotes" rows="2" placeholder="Ej. Pedir los chilaquiles con tasajo y reservar terraza..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Guardar en el Tour</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bottom Sheet Modal: Check-in / Reseña -->
+  <div class="modal-backdrop" id="reviewModal" aria-hidden="true">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h2>¡Check-in Completado!</h2>
+        <button type="button" class="close-btn" id="btnCloseReview">&times;</button>
+      </div>
+      <form id="reviewForm" class="sheet-form">
+        <input type="hidden" id="reviewPlaceId" />
+        <p class="review-subtitle" id="reviewPlaceName"></p>
+
+        <div class="form-group">
+          <label>Calificación de la experiencia</label>
+          <div class="star-picker" id="starPicker">
+            <button type="button" data-val="1">★</button>
+            <button type="button" data-val="2">★</button>
+            <button type="button" data-val="3">★</button>
+            <button type="button" data-val="4">★</button>
+            <button type="button" data-val="5">★</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reviewComment">Recuerdo o qué pidieron</label>
+          <textarea id="reviewComment" rows="3" placeholder="Escribe qué les gustó más o una anécdota de ese día..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Guardar Recuerdo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Instrucciones de Instalación Móvil -->
+  <div class="modal-backdrop" id="installModal" aria-hidden="true">
+    <div class="bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-header">
+        <h2>Instalar en tu Celular</h2>
+        <button type="button" class="close-btn" id="btnCloseInstall">&times;</button>
+      </div>
+      <div class="install-guide">
+        <div class="guide-step">
+          <strong>🍎 En iPhone (Safari):</strong>
+          <p>Toca el botón <strong>Compartir</strong> (cuadro con flecha hacia arriba) en la barra inferior y selecciona <strong>"Agregar a inicio"</strong>.</p>
+        </div>
+        <div class="guide-step">
+          <strong>🤖 En Android (Chrome):</strong>
+          <p>Toca los <strong>tres puntos (⋮)</strong> arriba a la derecha y elige <strong>"Instalar aplicación"</strong> o <strong>"Agregar a la pantalla principal"</strong>.</p>
+        </div>
+        <p class="guide-note">Funciona sin internet y guarda todos sus lugares directamente en el teléfono.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de notificación -->
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
